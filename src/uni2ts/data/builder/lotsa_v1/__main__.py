@@ -108,7 +108,7 @@ for dataset in datasets:
             storage_path=args.storage_path,
         ).build_dataset(dataset=dataset)
         print(f"Successfully built {dataset}")
-    except Exception as e:
+    except Exception:
         print(f"Failed to build {dataset}")
         failed[dataset] = traceback.format_exc()
 

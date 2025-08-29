@@ -168,7 +168,7 @@ def test_patch_crop(
 @pytest.mark.parametrize(
     "length, freq",
     [(1000, "T")]
-    + [(l, "H") for l in [1000, 2000, 3000]]
+    + [(length, "H") for length in [1000, 2000, 3000]]
     + [(100, f) for f in ["B", "W", "7D", "D", "15T"]],
 )
 @pytest.mark.parametrize("target_dim", [1, 3])

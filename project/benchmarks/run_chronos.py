@@ -5,8 +5,6 @@ from functools import partial
 import numpy as np
 import torch
 from chronos import ChronosPipeline
-from gluonts.dataset.repository import get_dataset
-from gluonts.dataset.split import split
 from gluonts.ev.metrics import (
     MAE,
     MAPE,
@@ -69,7 +67,7 @@ def evaluate(
             break
         except torch.cuda.OutOfMemoryError:
             print(
-                f"OutOfMemoryError at batch_size {batch_size}, reducing to {batch_size//2}"
+                f"OutOfMemoryError at batch_size {batch_size}, reducing to {batch_size // 2}"
             )
             batch_size //= 2
 

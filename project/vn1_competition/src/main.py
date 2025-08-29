@@ -2,7 +2,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch
 from forecast import Forecast
 from gluonts.dataset.pandas import PandasDataset
 

@@ -34,7 +34,6 @@ from gluonts.transform import (
 )
 from gluonts.transform.split import TFTInstanceSplitter
 from jaxtyping import Bool, Float, Int
-from torch.distributions import Distribution
 
 from uni2ts.common.torch_util import safe_div
 from uni2ts.loss.packed import PackedNLLLoss as _PackedNLLLoss
@@ -83,9 +82,9 @@ class MoiraiMoEForecast(L.LightningModule):
         patch_size: int = 16,
         num_samples: int = 100,
     ):
-        assert (module is not None) or (
-            module_kwargs is not None
-        ), "if module is not provided, module_kwargs is required"
+        assert (module is not None) or (module_kwargs is not None), (
+            "if module is not provided, module_kwargs is required"
+        )
         super().__init__()
         self.save_hyperparameters(ignore=["module"])
         self.module = MoiraiMoEModule(**module_kwargs) if module is None else module

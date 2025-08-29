@@ -165,7 +165,13 @@ def hf_dataset_path(
     hf_dataset = Dataset.from_generator(gen_func)
     hf_dataset.save_to_disk(path / "hf_dataset")
 
-    yield path / "hf_dataset", num_examples, target_dim, past_feat_dynamic_real_dim, length
+    yield (
+        path / "hf_dataset",
+        num_examples,
+        target_dim,
+        past_feat_dynamic_real_dim,
+        length,
+    )
     shutil.rmtree(str(path))
 
 

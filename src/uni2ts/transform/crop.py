@@ -13,7 +13,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import partial
@@ -47,9 +46,9 @@ class PatchCrop(MapFuncMixin, Transformation):
     optional_fields: tuple[str, ...] = ("past_feat_dynamic_real",)
 
     def __post_init__(self):
-        assert (
-            self.min_time_patches <= self.max_patches
-        ), "min_patches must be <= max_patches"
+        assert self.min_time_patches <= self.max_patches, (
+            "min_patches must be <= max_patches"
+        )
         assert len(self.fields) > 0, "fields must be non-empty"
 
     def __call__(self, data_entry: dict[str, Any]) -> dict[str, Any]:

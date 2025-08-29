@@ -53,9 +53,9 @@ class Moirai2Forecast(L.LightningModule):
         module_kwargs: Optional[dict[str, Any]] = None,
         module: Optional[Moirai2Module] = None,
     ):
-        assert (module is not None) or (
-            module_kwargs is not None
-        ), "if module is not provided, module_kwargs is required"
+        assert (module is not None) or (module_kwargs is not None), (
+            "if module is not provided, module_kwargs is required"
+        )
         if module_kwargs and "attn_dropout_p" in module_kwargs:
             module_kwargs["attn_dropout_p"] = 0
         if module_kwargs and "dropout_p" in module_kwargs:
@@ -444,7 +444,6 @@ class Moirai2Forecast(L.LightningModule):
             List[Float[np.ndarray, "batch past_time tgt"]]
         ] = None,
     ) -> Float[numpy.ndarray, "batch num_quantiles future_time *tgt"]:
-
         # only support univariate forecast now
         # implementation refer to https://github.com/awslabs/gluonts/blob/v0.15.x/src/gluonts/transform/split.py#L523
         data_entry = {

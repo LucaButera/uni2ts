@@ -1,5 +1,5 @@
 import abc
-from typing import Callable, Optional
+from typing import Callable
 
 import torch
 from einops import rearrange, repeat
@@ -30,7 +30,6 @@ class PackedQuantileLoss(PackedQuantileLoss, abc.ABC):
         sample_id: Int[torch.Tensor, "*batch seq_len"],
         variate_id: Int[torch.Tensor, "*batch seq_len"],
     ) -> Float[torch.Tensor, "*batch seq_len patch_size"]:
-
         quantile_levels = torch.tensor(self.quantile_levels, device=pred.device).view(
             1, 1, -1, 1
         )

@@ -35,9 +35,9 @@ class MaskedPrediction(MapFuncMixin, CheckArrNDimMixin, Transformation):
     expected_ndim: int = 2
 
     def __post_init__(self):
-        assert (
-            self.min_mask_ratio <= self.max_mask_ratio
-        ), "min_mask_ratio must be <= max_mask_ratio"
+        assert self.min_mask_ratio <= self.max_mask_ratio, (
+            "min_mask_ratio must be <= max_mask_ratio"
+        )
 
     def __call__(self, data_entry: dict[str, Any]) -> dict[str, Any]:
         target = data_entry[self.target_field]

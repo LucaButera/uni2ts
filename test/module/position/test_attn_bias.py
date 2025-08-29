@@ -16,12 +16,7 @@
 import pytest
 import torch
 
-from uni2ts.module.position.attn_bias import (
-    AttentionBias,
-    BinaryAttentionBias,
-    LinearAttentionBias,
-    RelativeAttentionBias,
-)
+from uni2ts.module.position.attn_bias import BinaryAttentionBias, LinearAttentionBias
 
 
 @pytest.mark.parametrize("batch_shape", [tuple(), (1,), (2, 3)])

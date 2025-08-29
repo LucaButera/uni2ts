@@ -140,7 +140,6 @@ class AddSampleIndex(CollectFuncMixin, CheckArrNDimMixin, Transformation):
     collection_type: type = list
 
     def __call__(self, data_entry: dict[str, Any]) -> dict[str, Any]:
-
         data_entry[self.sample_id_field] = self.collect_func(
             self._generate_sample_id,
             data_entry,

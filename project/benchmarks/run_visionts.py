@@ -3,8 +3,6 @@ import os
 import warnings
 from functools import partial
 
-warnings.filterwarnings("ignore")
-
 import einops
 import numpy as np
 import pandas as pd
@@ -19,6 +17,8 @@ from visionts import VisionTS
 
 from uni2ts.eval_util.data import get_gluonts_test_dataset, get_lsf_test_dataset
 from uni2ts.eval_util.evaluation import evaluate_forecasts
+
+warnings.filterwarnings("ignore")
 
 
 def imputation_nan(array):
@@ -219,7 +219,7 @@ def evaluate(
             break
         except torch.cuda.OutOfMemoryError:
             print(
-                f"OutOfMemoryError at batch_size {batch_size}, reducing to {batch_size//2}"
+                f"OutOfMemoryError at batch_size {batch_size}, reducing to {batch_size // 2}"
             )
             batch_size //= 2
 

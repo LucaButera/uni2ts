@@ -23,7 +23,7 @@ from datasets import Features, Sequence, Value
 
 try:
     from subseasonal_data import data_loaders
-except ImportError as e:
+except ImportError:
 
     def data_loaders(*args, **kwargs):
         raise e

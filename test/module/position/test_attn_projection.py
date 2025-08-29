@@ -19,12 +19,7 @@ import pytest
 import torch
 from einops import repeat
 
-from uni2ts.module.position.attn_projection import (
-    IdentityProjection,
-    LearnedProjection,
-    QueryKeyProjection,
-    RotaryProjection,
-)
+from uni2ts.module.position.attn_projection import RotaryProjection
 
 
 @pytest.mark.parametrize(

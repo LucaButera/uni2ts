@@ -107,7 +107,7 @@ def evaluate(
             break
         except torch.cuda.OutOfMemoryError:
             print(
-                f"OutOfMemoryError at batch_size {batch_size}, reducing to {batch_size//2}"
+                f"OutOfMemoryError at batch_size {batch_size}, reducing to {batch_size // 2}"
             )
             batch_size //= 2
 
@@ -125,9 +125,9 @@ def evaluate(
     ):
         labels = np.array([torch.tensor(entry["target"]) for entry in label_batch])
         forecasts_batch = np.array(forecast_batch)
-        assert (
-            labels.shape == forecasts_batch.shape
-        ), f"Labels shape {labels.shape} != Forecasts shape {forecasts_batch.shape}"
+        assert labels.shape == forecasts_batch.shape, (
+            f"Labels shape {labels.shape} != Forecasts shape {forecasts_batch.shape}"
+        )
         mae_run_losses.append(_mae(forecasts_batch, labels).sum())
         mse_run_losses.append(_mse(forecasts_batch, labels).sum())
         smape_run_losses.append(_smape(forecasts_batch, labels).sum())

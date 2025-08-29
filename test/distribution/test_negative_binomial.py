@@ -17,10 +17,7 @@ import pytest
 import torch
 from torch.distributions import NegativeBinomial as TorchNegativeBinomial
 
-from uni2ts.distribution.negative_binomial import (
-    NegativeBinomial,
-    NegativeBinomialOutput,
-)
+from uni2ts.distribution.negative_binomial import NegativeBinomial
 
 NB_PARAMS = [
     (

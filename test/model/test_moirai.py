@@ -174,9 +174,9 @@ def test_moirai_transform_map(
 
     # check field
     for field in MoiraiPretrain.seq_fields:
-        assert (
-            field in transformed_data_entry
-        ), f"transformed_data_entry should have field {field}"
+        assert field in transformed_data_entry, (
+            f"transformed_data_entry should have field {field}"
+        )
 
     # check length
     seq_len = len(data_entry["target"])

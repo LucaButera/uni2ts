@@ -59,9 +59,9 @@ class LOTSADatasetBuilder(DatasetBuilder, abc.ABC):
         :param sample_time_series: how to sample time series from the datasets
         :param storage_path: directory to which data is stored
         """
-        assert all(
-            dataset in self.dataset_list for dataset in datasets
-        ), f"Invalid datasets {set(datasets).difference(self.dataset_list)}, must be one of {self.dataset_list}"
+        assert all(dataset in self.dataset_list for dataset in datasets), (
+            f"Invalid datasets {set(datasets).difference(self.dataset_list)}, must be one of {self.dataset_list}"
+        )
         weight_map = weight_map or dict()
         self.datasets = datasets
         self.weights = [weight_map.get(dataset, 1.0) for dataset in datasets]
@@ -74,6 +74,7 @@ class LOTSADatasetBuilder(DatasetBuilder, abc.ABC):
         """
         Loads all datasets in dataset_list
         """
+        self.maybe_download_data()
         datasets = [
             self.dataset_load_func_map[dataset](
                 HuggingFaceDatasetIndexer(
@@ -110,3 +111,17 @@ class LOTSADatasetBuilder(DatasetBuilder, abc.ABC):
             except KeyError:
                 transform = transform_map.get("default", Identity)
         return transform()
+
+    def maybe_download_data(self):
+        """
+        Downloads the LOTSA datasets to storage_path if not already present.
+        """
+        from huggingface_hub import snapshot_download
+
+        if not self.storage_path.exists():
+            snapshot_download(
+                repo_id="Salesforce/lotsa_data",
+                repo_type="dataset",
+                allow_patterns=[f"{dataset}/**" for dataset in self.dataset_list],
+                local_dir=self.storage_path,
+            )

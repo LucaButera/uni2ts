@@ -273,7 +273,6 @@ class SimpleFinetuneDatasetBuilder(DatasetBuilder):
         freq: str = "H",
         normalize: Optional[bool] = False,
     ):
-
         assert offset is None or date_offset is None, (
             "One or neither offset and date_offset must be specified, but not both. "
             f"Got offset: {offset}, date_offset: {date_offset}"
@@ -319,7 +318,6 @@ class SimpleFinetuneDatasetBuilder(DatasetBuilder):
     def load_dataset(
         self, transform_map: dict[str, Callable[..., Transformation]]
     ) -> Dataset:
-
         if self.mode == "S":
             dataset_type = "wide"
         elif self.mode == "M":

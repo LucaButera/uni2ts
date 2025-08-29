@@ -22,7 +22,9 @@ from .normal import NormalFixedScaleOutput, NormalOutput
 from .pareto import ParetoFixedAlphaOutput, ParetoOutput
 from .student_t import StudentTOutput
 
-DISTRIBUTION_OUTPUTS = [
+__all__ = [
+    "DistrParamProj",
+    "DistributionOutput",
     "LaplaceFixedScaleOutput",
     "LaplaceOutput",
     "LogNormalOutput",
@@ -32,6 +34,5 @@ DISTRIBUTION_OUTPUTS = [
     "NormalOutput",
     "ParetoFixedAlphaOutput",
     "StudentTOutput",
+    "ParetoOutput",
 ]
-
-__all__ = ["DistrParamProj", "DistributionOutput"] + DISTRIBUTION_OUTPUTS

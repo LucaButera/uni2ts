@@ -69,7 +69,7 @@ def test_add_variate_index(
         transformed_data_entry = add_variate_index(data_entry.copy())
         output = transformed_data_entry["variate_id"]
         variate_ids = set()
-        if collection_type == list:
+        if isinstance(collection_type, list):
             assert len(output) == len(field_map) + len(optional_map)
             for dim_id, (field, (dim, length)) in zip(
                 output, (field_map | optional_map).items()
@@ -126,7 +126,7 @@ def test_add_time_index(
     )
     transformed_data_entry = add_time_index(data_entry.copy())
     output = transformed_data_entry["time_id"]
-    if collection_type == list:
+    if isinstance(collection_type, list):
         assert len(output) == len(field_map) + len(optional_map)
         for seq_id, (field, (dim, length)) in zip(
             output, (field_map | optional_map).items()
@@ -175,7 +175,7 @@ def test_add_observed_mask(
     )
     transformed_data_entry = add_observed_mask(data_entry.copy())
     output = transformed_data_entry["observed_mask"]
-    if collection_type == list:
+    if isinstance(collection_type, list):
         assert len(output) == len(field_map) + len(optional_map)
         for mask, (field, (dim, length)) in zip(
             output, (field_map | optional_map).items()

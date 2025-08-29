@@ -73,7 +73,7 @@ class LibCityDatasetBuilder(LOTSADatasetBuilder):
             else config["info"]["data_col"]
         )
         freq = to_offset(
-            pd.to_timedelta(f'{config["info"]["time_intervals"]}S')
+            pd.to_timedelta(f"{config['info']['time_intervals']}S")
         ).freqstr
 
         try:
@@ -144,12 +144,15 @@ class LibCityDatasetBuilder(LOTSADatasetBuilder):
                         target = target.squeeze(-1)
                     else:
                         target = target.T
-                yield dict(
-                    item_id=f"{idx}",
-                    start=entity_df.index[0],
-                    target=target,
-                    freq=freq,
-                ) | past_feat_dynamic_real_dict
+                yield (
+                    dict(
+                        item_id=f"{idx}",
+                        start=entity_df.index[0],
+                        target=target,
+                        freq=freq,
+                    )
+                    | past_feat_dynamic_real_dict
+                )
 
         hf_datasets = datasets.Dataset.from_generator(
             gen_func,

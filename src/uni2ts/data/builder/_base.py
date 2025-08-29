@@ -58,9 +58,9 @@ class ConcatDatasetBuilder(DatasetBuilder):
         """
         super().__init__()
         assert len(builders) > 0, "Must provide at least one builder to ConcatBuilder"
-        assert all(
-            isinstance(builder, DatasetBuilder) for builder in builders
-        ), "All builders must be instances of DatasetBuilder"
+        assert all(isinstance(builder, DatasetBuilder) for builder in builders), (
+            "All builders must be instances of DatasetBuilder"
+        )
         self.builders: tuple[DatasetBuilder, ...] = builders
 
     def build_dataset(self):

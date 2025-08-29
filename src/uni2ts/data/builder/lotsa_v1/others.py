@@ -26,7 +26,7 @@ from datasets import Features, Sequence, Value
 
 try:
     from pyreadr import read_r
-except ImportError as e:
+except ImportError:
 
     def read_r(*args, **kwargs):
         raise e

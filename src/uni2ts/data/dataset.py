@@ -118,7 +118,9 @@ class TimeSeriesDataset(Dataset):
             k: (
                 [v]
                 if isinstance(v, UnivarTimeSeries)
-                else list(v) if isinstance(v, MultivarTimeSeries) else v
+                else list(v)
+                if isinstance(v, MultivarTimeSeries)
+                else v
             )
             for k, v in data.items()
         }
