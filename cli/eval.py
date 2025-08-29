@@ -23,6 +23,7 @@ from omegaconf import DictConfig
 from torch.utils.tensorboard import SummaryWriter
 
 from uni2ts.eval_util.evaluation import evaluate_model
+from uni2ts.common import hydra_util  # noqa: F401
 
 
 @hydra.main(version_base="1.3", config_path="conf/eval", config_name="default")
