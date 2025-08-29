@@ -94,9 +94,9 @@ class CollectFuncMixin:
             )
 
         collection_type = getattr(self, "collection_type")
-        if isinstance(collection_type, list):
+        if collection_type is list:
             collect_func = self.collect_func_list
-        elif isinstance(collection_type, dict):
+        elif collection_type is dict:
             collect_func = self.collect_func_dict
         else:
             raise ValueError(f"Unknown collection_type: {collection_type}")
