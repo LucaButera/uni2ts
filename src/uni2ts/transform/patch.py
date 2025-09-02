@@ -126,6 +126,7 @@ class Patchify(MapFuncMixin, Transformation):
     fields: tuple[str, ...] = ("target",)
     optional_fields: tuple[str, ...] = ("past_feat_dynamic_real",)
     pad_value: int | float = 0
+    reduce_patch_fields: tuple[str, ...] = tuple()
 
     def __call__(self, data_entry: dict[str, Any]) -> dict[str, Any]:
         patch_size = data_entry["patch_size"]
@@ -140,20 +141,29 @@ class Patchify(MapFuncMixin, Transformation):
     def _patchify(self, data_entry: dict[str, Any], field: str, patch_size: int):
         arr = data_entry[field]
         if isinstance(arr, list):
-            return [self._patchify_arr(a, patch_size) for a in arr]
+            return [self._patchify_arr(a, patch_size, field) for a in arr]
         if isinstance(arr, dict):
             for k, v in arr.items():
                 if k in self.fields or k in self.optional_fields:
-                    arr[k] = self._patchify_arr(v, patch_size)
+                    arr[k] = self._patchify_arr(v, patch_size, field)
             return arr
-        return self._patchify_arr(arr, patch_size)
+        return self._patchify_arr(arr, patch_size, field)
 
     def _patchify_arr(
-        self, arr: Num[np.ndarray, "var time*patch"], patch_size: int
+        self,
+        arr: Num[np.ndarray, "var time*patch"],
+        patch_size: int,
+        field: str,
     ) -> Num[np.ndarray, "var time max_patch"]:
         assert arr.shape[-1] % patch_size == 0
         arr = rearrange(arr, "... (time patch) -> ... time patch", patch=patch_size)
-        pad_width = [(0, 0) for _ in range(arr.ndim)]
-        pad_width[-1] = (0, self.max_patch_size - patch_size)
-        arr = np.pad(arr, pad_width, mode="constant", constant_values=self.pad_value)
+        if field in self.reduce_patch_fields:
+            assert np.equal(arr, arr[..., 0:1]).all()
+            arr = arr[..., 0]
+        else:
+            pad_width = [(0, 0) for _ in range(arr.ndim)]
+            pad_width[-1] = (0, self.max_patch_size - patch_size)
+            arr = np.pad(
+                arr, pad_width, mode="constant", constant_values=self.pad_value
+            )
         return arr

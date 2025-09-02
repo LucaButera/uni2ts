@@ -33,6 +33,7 @@ class MaskedPrediction(MapFuncMixin, CheckArrNDimMixin, Transformation):
     optional_truncate_fields: tuple[str, ...] = tuple()
     prediction_mask_field: str = "prediction_mask"
     expected_ndim: int = 2
+    context_mask_field: str | None = None
 
     def __post_init__(self):
         assert self.min_mask_ratio <= self.max_mask_ratio, (
@@ -41,7 +42,12 @@ class MaskedPrediction(MapFuncMixin, CheckArrNDimMixin, Transformation):
 
     def __call__(self, data_entry: dict[str, Any]) -> dict[str, Any]:
         target = data_entry[self.target_field]
-        prediction_mask = self._generate_prediction_mask(target)
+        prediction_mask = self._generate_prediction_mask(
+            target,
+            context_mask=data_entry[self.context_mask_field]
+            if self.context_mask_field is not None
+            else None,
+        )
         self.map_func(
             partial(self._truncate, mask=prediction_mask),  # noqa
             data_entry,
@@ -52,13 +58,31 @@ class MaskedPrediction(MapFuncMixin, CheckArrNDimMixin, Transformation):
         return data_entry
 
     def _generate_prediction_mask(
-        self, target: Float[np.ndarray, "var time *feat"]
+        self,
+        target: Float[np.ndarray, "var time *feat"],
+        context_mask: Bool[np.ndarray, "var time"] | None = None,
     ) -> Bool[np.ndarray, "var time"]:
         self.check_ndim("target", target, self.expected_ndim)
         var, time = target.shape[:2]
+        if context_mask is not None:
+            self.check_ndim("context_mask", context_mask, self.expected_ndim - 1)
+            assert context_mask.shape == (var, time), (
+                "context_mask must have the same shape as target except for the last dimension"
+            )
+            context_time = context_mask.sum(axis=1)
+            assert (context_time == context_time[0]).all(), (
+                "context_mask must have the same number of True values for all variables"
+            )
+            context_time = context_time[0]
+            assert context_time < time, (
+                "context_mask must not cover the entire time dimension"
+            )
+        else:
+            context_time = 0
+
         prediction_mask = np.zeros((var, time), dtype=bool)
         mask_ratio = np.random.uniform(self.min_mask_ratio, self.max_mask_ratio)
-        mask_length = max(1, round(time * mask_ratio))
+        mask_length = max(1, round((time - context_time) * mask_ratio))
         prediction_mask[:, -mask_length:] = True
         return prediction_mask
 

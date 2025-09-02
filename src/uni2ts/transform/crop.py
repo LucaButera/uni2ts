@@ -44,6 +44,7 @@ class PatchCrop(MapFuncMixin, Transformation):
     offset: bool = True
     fields: tuple[str, ...] = ("target",)
     optional_fields: tuple[str, ...] = ("past_feat_dynamic_real",)
+    min_context_patches: int = 0
 
     def __post_init__(self):
         assert self.min_time_patches <= self.max_patches, (
@@ -52,20 +53,44 @@ class PatchCrop(MapFuncMixin, Transformation):
         assert len(self.fields) > 0, "fields must be non-empty"
 
     def __call__(self, data_entry: dict[str, Any]) -> dict[str, Any]:
-        a, b = self._get_boundaries(data_entry)
+        a, b, a_context, b_context = self._get_boundaries(data_entry)
         self.map_func(
-            partial(self._crop, a=a, b=b),  # noqa
+            partial(self._crop, a=a, b=b, a_context=a_context, b_context=b_context),  # noqa
             data_entry,
             self.fields,
             optional_fields=self.optional_fields,
         )
+        if a_context is not None and b_context is not None:
+            context_mask = np.zeros(b - a + b_context - a_context, dtype=bool)
+            context_mask[: b_context - a_context] = True
+            data_entry["context_mask"] = context_mask
         return data_entry
 
     @staticmethod
-    def _crop(data_entry: dict[str, Any], field: str, a: int, b: int) -> Sequence:
-        return [ts[a:b] for ts in data_entry[field]]
+    def _crop(
+        data_entry: dict[str, Any],
+        field: str,
+        a: int,
+        b: int,
+        a_context: int | None = None,
+        b_context: int | None = None,
+    ) -> Sequence:
+        if a_context is not None and b_context is not None:
+            result = []
+            for ts in data_entry[field]:
+                if isinstance(ts, np.ndarray):
+                    result.append(
+                        np.concatenate((ts[a_context:b_context], ts[a:b]), axis=0)
+                    )
+                else:
+                    result.append(ts[a_context:b_context] + ts[a:b])
+            return result
+        else:
+            return [ts[a:b] for ts in data_entry[field]]
 
-    def _get_boundaries(self, data_entry: dict[str, Any]) -> tuple[int, int]:
+    def _get_boundaries(
+        self, data_entry: dict[str, Any]
+    ) -> tuple[int, int, int | None, int | None]:
         patch_size = data_entry["patch_size"]
         field: list[UnivarTimeSeries] = data_entry[self.fields[0]]
         time = field[0].shape[0]
@@ -90,21 +115,50 @@ class PatchCrop(MapFuncMixin, Transformation):
         # 1. max_patches should be divided by nvar if the time series is subsequently flattened
         # 2. cannot have more patches than total available patches
         max_patches = min(self.max_patches // nvar, total_patches)
-        if max_patches < self.min_time_patches:
+        if max_patches < (self.min_time_patches + self.min_context_patches):
             raise ValueError(
-                f"max_patches={max_patches} < min_time_patches={self.min_time_patches}"
+                f"max_patches={max_patches} < min_time_patches={self.min_time_patches} + min_context_patches={self.min_context_patches}."
             )
 
+        # number of patches to consider for target
         num_patches = np.random.randint(
-            self.min_time_patches, max_patches + 1
-        )  # number of patches to consider
+            self.min_time_patches, max_patches + 1 - self.min_context_patches
+        )
+        # number of patches to consider for context
+        # if possible make context at least as long as target
+        num_patches_context = (
+            np.random.randint(
+                num_patches
+                if max_patches >= 2 * num_patches
+                else self.min_context_patches,
+                max_patches - num_patches + 1,
+            )
+            if self.min_context_patches > 0
+            else 0
+        )
+        # first patch to consider for target
         first = np.random.randint(
-            total_patches - num_patches + 1
-        )  # first patch to consider
+            num_patches_context,
+            total_patches - num_patches + 1,
+        )
+        # first patch to consider for context
+        first_context = (
+            np.random.randint(
+                first - num_patches_context + 1,
+            )
+            if num_patches_context > 0
+            else None
+        )
 
         start = offset + first * patch_size
         stop = start + num_patches * patch_size
-        return start, stop
+        if first_context is not None:
+            start_context = offset + first_context * patch_size
+            stop_context = start_context + num_patches_context * patch_size
+        else:
+            start_context = None
+            stop_context = None
+        return start, stop, start_context, stop_context
 
 
 @dataclass

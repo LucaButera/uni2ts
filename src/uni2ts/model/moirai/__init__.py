@@ -17,10 +17,12 @@ from .finetune import MoiraiFinetune
 from .forecast import MoiraiForecast
 from .module import MoiraiModule
 from .pretrain import MoiraiPretrain
+from .pretrain_context import MoiraiPretrainContext
 
 __all__ = [
     "MoiraiFinetune",
     "MoiraiForecast",
     "MoiraiModule",
     "MoiraiPretrain",
+    "MoiraiPretrainContext",
 ]
