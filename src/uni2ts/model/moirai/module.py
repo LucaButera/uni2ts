@@ -157,6 +157,7 @@ class MoiraiModule(
         variate_id: Int[torch.Tensor, "*batch seq_len"],
         prediction_mask: Bool[torch.Tensor, "*batch seq_len"],
         patch_size: Int[torch.Tensor, "*batch seq_len"],
+        context_mask: Bool[torch.Tensor, "*batch seq_len"] | None = None,
     ) -> Distribution:
         """
         Defines the forward pass of MoiraiModule.
@@ -187,12 +188,72 @@ class MoiraiModule(
         scaled_target = (target - loc) / scale
         reprs = self.in_proj(scaled_target, patch_size)
         masked_reprs = mask_fill(reprs, prediction_mask, self.mask_encoding.weight)
+        attention_mask = packed_attention_mask(sample_id)
+        if context_mask is not None:
+            masked_reprs, attention_mask, time_id, variate_id, patch_size = (
+                self._context_forward(
+                    masked_reprs,
+                    attention_mask,
+                    time_id,
+                    variate_id,
+                    patch_size,
+                    context_mask,
+                )
+            )
         reprs = self.encoder(
             masked_reprs,
-            packed_attention_mask(sample_id),
+            attention_mask,
             time_id=time_id,
             var_id=variate_id,
         )
         distr_param = self.param_proj(reprs, patch_size)
         distr = self.distr_output.distribution(distr_param, loc=loc, scale=scale)
         return distr
+
+    def _context_forward(
+        self,
+        masked_reprs,
+        attention_mask,
+        time_id,
+        variate_id,
+        patch_size,
+        context_mask,
+    ):
+        assert context_mask is not None, "context_mask is required for _context_forward"
+        # reset time_id at end of context patches
+        time_id = time_id * context_mask + (
+            time_id - torch.max(time_id * context_mask, dim=1, keepdim=True).values - 1
+        ) * (~context_mask)
+        # compute identity attention mask
+        id_attn_mask = torch.eye(
+            attention_mask.size(-1),
+            device=attention_mask.device,
+            dtype=torch.bool,
+        ).unsqueeze(0)
+
+        # compute context representations
+        reprs = self.encoder(
+            masked_reprs * context_mask.unsqueeze(-1),
+            attention_mask
+            & ((context_mask.unsqueeze(1) & context_mask.unsqueeze(2)) | id_attn_mask),
+            time_id=time_id,
+            var_id=variate_id * context_mask,
+        )
+        # average context representations
+        reprs = reprs * context_mask.unsqueeze(-1)
+        reprs = torch.sum(reprs, dim=1, keepdim=True) / torch.sum(
+            context_mask, dim=1, keepdim=True
+        ).unsqueeze(-1)
+        # shift target representations and mask out context positions
+        masked_reprs = (masked_reprs + reprs) * ~context_mask.unsqueeze(-1)
+        return (
+            masked_reprs,
+            attention_mask
+            & (
+                ((~context_mask.unsqueeze(1)) & (~context_mask.unsqueeze(2)))
+                | id_attn_mask
+            ),
+            time_id,
+            variate_id * ~context_mask,
+            patch_size * ~context_mask,
+        )

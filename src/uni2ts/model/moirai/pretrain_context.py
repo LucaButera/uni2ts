@@ -145,6 +145,7 @@ class MoiraiPretrainContext(L.LightningModule):
             variate_id=variate_id,
             prediction_mask=prediction_mask,
             patch_size=patch_size,
+            context_mask=context_mask,
         )
         return distr
 
