@@ -118,10 +118,11 @@ class LOTSADatasetBuilder(DatasetBuilder, abc.ABC):
         """
         from huggingface_hub import snapshot_download
 
-        if not self.storage_path.exists():
-            snapshot_download(
-                repo_id="Salesforce/lotsa_data",
-                repo_type="dataset",
-                allow_patterns=[f"{dataset}/**" for dataset in self.dataset_list],
-                local_dir=self.storage_path,
-            )
+        for dataset in self.dataset_list:
+            if not self.storage_path.joinpath(dataset).exists():
+                snapshot_download(
+                    repo_id="Salesforce/lotsa_data",
+                    repo_type="dataset",
+                    allow_patterns=[f"{dataset}/**"],
+                    local_dir=self.storage_path,
+                )
