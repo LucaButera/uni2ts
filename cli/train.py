@@ -181,14 +181,17 @@ def main(cfg: DictConfig):
 
     # Validate before training, check the performance of original pretrained model.
     # trainer.validate(model, datamodule=DataModule(cfg, train_dataset, val_dataset))
-
-    trainer.fit(
-        model,
-        datamodule=DataModule(cfg, train_dataset, val_dataset),
-        ckpt_path=cfg.ckpt_path,
-    )
-
-    print("Finished training!")
+    try:
+        trainer.fit(
+            model,
+            datamodule=DataModule(cfg, train_dataset, val_dataset),
+            ckpt_path=cfg.ckpt_path,
+        )
+        trainer.logger.finalize("success")
+        print("Finished training!")
+    finally:
+        if isinstance(trainer.logger, L.pytorch.loggers.WandbLogger):
+            trainer.logger.experiment.finish()
 
 
 if __name__ == "__main__":
