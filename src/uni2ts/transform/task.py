@@ -18,6 +18,7 @@ from functools import partial
 from typing import Any
 
 import numpy as np
+from einops import repeat
 from jaxtyping import Bool, Float
 
 from ._base import Transformation
@@ -69,11 +70,10 @@ class MaskedPrediction(MapFuncMixin, CheckArrNDimMixin, Transformation):
             assert context_mask.shape == (var, time), (
                 "context_mask must have the same shape as target except for the last dimension"
             )
-            context_time = context_mask.sum(axis=1)
-            assert (context_time == context_time[0]).all(), (
-                "context_mask must have the same number of True values for all variables"
+            assert (context_mask == context_mask[0]).all(), (
+                "context_mask must be the same for all variables"
             )
-            context_time = context_time[0]
+            context_time = context_mask.sum(axis=1)[0]
             assert context_time < time, (
                 "context_mask must not cover the entire time dimension"
             )
@@ -115,11 +115,12 @@ class ExtendMask(CheckArrNDimMixin, CollectFuncMixin, Transformation):
     mask_field: str
     optional_fields: tuple[str, ...] = tuple()
     expected_ndim: int = 2
+    strategy: str = "zeros"  # zeros or context
 
     def __call__(self, data_entry: dict[str, Any]) -> dict[str, Any]:
         target_mask: np.ndarray = data_entry[self.mask_field]
         aux_target_mask: list[np.ndarray] = self.collect_func_list(
-            self._generate_target_mask,
+            partial(self._generate_target_mask, target_mask=target_mask),
             data_entry,
             self.fields,
             optional_fields=self.optional_fields,
@@ -128,12 +129,20 @@ class ExtendMask(CheckArrNDimMixin, CollectFuncMixin, Transformation):
         return data_entry
 
     def _generate_target_mask(
-        self, data_entry: dict[str, Any], field: str
+        self, data_entry: dict[str, Any], field: str, target_mask: np.ndarray
     ) -> np.ndarray:
         arr: np.ndarray = data_entry[field]
         self.check_ndim(field, arr, self.expected_ndim)
         var, time = arr.shape[:2]
-        field_target_mask = np.zeros((var, time), dtype=bool)
+        if self.strategy == "zeros":
+            field_target_mask = np.zeros((var, time), dtype=bool)
+        elif self.strategy == "context":
+            # by construction context masks are not truncated in time and have all the same values across var
+            field_target_mask = repeat(target_mask[0], "time -> var time", var=var)[
+                :, :time
+            ]
+        else:
+            raise NotImplementedError(f"Unknown strategy {self.strategy}")
         return field_target_mask
 
 

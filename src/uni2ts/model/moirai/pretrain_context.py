@@ -473,6 +473,14 @@ class MoiraiPretrainContext(L.LightningModule):
                     optional_fields=("past_feat_dynamic_real",),
                     mask_field="prediction_mask",
                     expected_ndim=3,
+                    strategy="zeros",
+                )
+                + ExtendMask(
+                    fields=tuple(),
+                    optional_fields=("past_feat_dynamic_real",),
+                    mask_field="context_mask",
+                    expected_ndim=3,
+                    strategy="context",
                 )
                 + FlatPackCollection(
                     field="variate_id",

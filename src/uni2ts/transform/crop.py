@@ -63,7 +63,11 @@ class PatchCrop(MapFuncMixin, Transformation):
         if a_context is not None and b_context is not None:
             context_mask = np.zeros(b - a + b_context - a_context, dtype=bool)
             context_mask[: b_context - a_context] = True
-            data_entry["context_mask"] = context_mask
+        else:
+            context_mask = np.zeros(b - a, dtype=bool)
+        data_entry["context_mask"] = [
+            context_mask.copy() for _ in range(len(data_entry["target"]))
+        ]
         return data_entry
 
     @staticmethod
@@ -115,26 +119,26 @@ class PatchCrop(MapFuncMixin, Transformation):
         # 1. max_patches should be divided by nvar if the time series is subsequently flattened
         # 2. cannot have more patches than total available patches
         max_patches = min(self.max_patches // nvar, total_patches)
-        if max_patches < (self.min_time_patches + self.min_context_patches):
+        if max_patches < self.min_time_patches:
             raise ValueError(
-                f"max_patches={max_patches} < min_time_patches={self.min_time_patches} + min_context_patches={self.min_context_patches}."
+                f"max_patches={max_patches} < min_time_patches={self.min_time_patches}."
             )
+        elif max_patches < (self.min_time_patches + self.min_context_patches):
+            min_feasible_context_patches = max_patches - self.min_time_patches
+        else:
+            min_feasible_context_patches = self.min_context_patches
 
         # number of patches to consider for target
         num_patches = np.random.randint(
-            self.min_time_patches, max_patches + 1 - self.min_context_patches
+            self.min_time_patches, max_patches + 1 - min_feasible_context_patches
         )
         # number of patches to consider for context
         # if possible make context at least as long as target
-        num_patches_context = (
-            np.random.randint(
-                num_patches
-                if max_patches >= 2 * num_patches
-                else self.min_context_patches,
-                max_patches - num_patches + 1,
-            )
-            if self.min_context_patches > 0
-            else 0
+        num_patches_context = np.random.randint(
+            num_patches
+            if max_patches >= 2 * num_patches
+            else min_feasible_context_patches,
+            max_patches - num_patches + 1,
         )
         # first patch to consider for target
         first = np.random.randint(
@@ -155,9 +159,18 @@ class PatchCrop(MapFuncMixin, Transformation):
         if first_context is not None:
             start_context = offset + first_context * patch_size
             stop_context = start_context + num_patches_context * patch_size
+        elif self.min_context_patches > 0:
+            # if not patches for context use first patch
+            start_context = start
+            stop_context = start_context + patch_size
         else:
             start_context = None
             stop_context = None
+        if (
+            max_patches - ((stop_context - start_context + stop - start) / patch_size)
+            < 0
+        ) and (total_patches != self.min_time_patches):
+            raise RuntimeError("Bug in crop logic, report issue.")
         return start, stop, start_context, stop_context
 
 
