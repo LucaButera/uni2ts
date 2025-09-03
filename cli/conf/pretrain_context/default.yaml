@@ -19,9 +19,15 @@ trainer:
   num_nodes: 1
   precision: 32
   logger:
-      _target_: lightning.pytorch.loggers.TensorBoardLogger
+      #_target_: lightning.pytorch.loggers.TensorBoardLogger
+      #save_dir: ${hydra:runtime.output_dir}
+      #name: logs
+      _target_: lightning.pytorch.loggers.WandbLogger
+      project: imb_foundation_v1
+      entity: idsia-alari
+      log_model: true
       save_dir: ${hydra:runtime.output_dir}
-      name: logs
+      name: ${run_name}
   callbacks:
     - _target_: lightning.pytorch.callbacks.LearningRateMonitor
       logging_interval: epoch
@@ -72,3 +78,5 @@ train_dataloader:
   worker_init_fn: null
   prefetch_factor: 2
   persistent_workers: true
+model:
+  from_pretrained: null  # Salesforce/moirai-1.1-R-{small|base|large}

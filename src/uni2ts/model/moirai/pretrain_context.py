@@ -101,6 +101,7 @@ class MoiraiPretrainContext(L.LightningModule):
         weight_decay: float = 1e-2,
         log_on_step: bool = False,
         min_context_patches: int = 1,
+        from_pretrained: str | None = None,
     ):
         assert (module is not None) or (module_kwargs is not None), (
             "if module is not provided, module_kwargs is required"
@@ -111,7 +112,13 @@ class MoiraiPretrainContext(L.LightningModule):
         assert min_context_patches > 0, "min_context_patches should be positive."
         super().__init__()
         self.save_hyperparameters(ignore=["module"])
-        self.module = MoiraiModule(**module_kwargs) if module is None else module
+        if module is not None:
+            self.module = module
+        elif from_pretrained is not None:
+            self.module = MoiraiModule.from_pretrained(from_pretrained, **module_kwargs)
+            # TODO decide what should be frozen and what should not be
+        else:
+            self.module = MoiraiModule(**module_kwargs)
 
     def forward(
         self,
